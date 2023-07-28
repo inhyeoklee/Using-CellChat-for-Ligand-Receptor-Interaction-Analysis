@@ -6,20 +6,17 @@ output: pdf_document
 ---
 
 ## Overall analysis
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE,  
+                      warning = FALSE, message = FALSE, 
+                      fig.align = "center",
+                      R.options = list(max.print=100))
 ```
 
 ```{r}
 setwd("/Users/inhyeoklee/Desktop/")
 getwd()
 
-```
-
-```{r, echo=F}
-## DO NOT DELETE THIS BLOCK!
-Sys.info()
-gitcreds::gitcreds_set()
 ```
 
 ```{r}
@@ -400,22 +397,10 @@ ggsave("MI_Violin_Plots.png", p_combined2, width=45, height=35,dpi=600)
 
 ```
 
-```{r}
-
+```{r, echo=F}
+## DO NOT DELETE THIS BLOCK!
+Sys.info()
 ```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
 
 
 
