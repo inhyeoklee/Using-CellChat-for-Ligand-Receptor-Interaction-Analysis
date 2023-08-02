@@ -24,6 +24,7 @@ library(renv)
 # renv::status()
 # renv::clean()
 # renv::restore()
+# renv::history()
 ```
 
 ```{r}
@@ -50,7 +51,7 @@ library(Seurat)
 
 ```{r}
 # Load your data
-setwd("/Volumes/biologos/Bioinformatics/239999_scRNA_CellChat/Data")
+setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Data")
 lymphoid <- readRDS("lymphoid_srt_int.rds")
 myeloid <- readRDS("myeloid_srt_int.rds")
 # Combining the two datasets into a single Seurat object
