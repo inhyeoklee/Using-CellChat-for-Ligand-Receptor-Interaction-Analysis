@@ -1,7 +1,7 @@
 ---
 title: "CellChatAnalysis"
 author: "Daniel Lee"
-date: "2023-07-27"
+date: "2023-08-01"
 output: pdf_document
 ---
 
@@ -14,33 +14,50 @@ knitr::opts_chunk$set(echo = TRUE, eval = TRUE,
 ```
 
 ```{r}
-setwd("/Users/inhyeoklee/Desktop/")
 getwd()
 
+# running renv
+# install.packages("renv")
+library(renv)
+# renv::init()
+# renv::snapshot()
+# renv::status()
+# renv::clean()
+# renv::restore()
 ```
 
 ```{r}
 # install.packages("devtools")
-# devtools::install_github("sqjin/CellChat", dependencies = T)
-# dependencies 'ComplexHeatmap', 'BiocGenerics', 'BiocNeighbors' are not available for package 'CellChat'
+
 # if (!require("BiocManager", quietly = TRUE))
 #     install.packages("BiocManager")
-# BiocManager::install(version = "3.16")
-# BiocManager::install("ComplexHeatmap")
-# BiocManager::install("BiocNeighbors")
+# BiocManager::install(version = "3.17")
+
+# BiocManager::install("NMF")
+# BiocManager::install("BiocGenerics")
+# install.packages("car")
 # BiocManager::install("Biobase")
+# BiocManager::install("ComplexHeatmap")
+# BiocManager::install("Seurat")
+
+# svglite, expm, RSpectra, ggpubr, car, gert, mgcv, BiocParallel, BiocNeighbors, clue manually downloaded from CRAN & BiocManager and moved to renv project directory
+# devtools::install_github("sqjin/CellChat")
+
 library(CellChat)
 library(Seurat)
 
-# Load your data
-data <- readRDS("srtobject.Rds")
 ```
 
 ```{r}
-# install libraries
-# BiocManager::install("Signac")
-library(Signac)
+# Load your data
+setwd("/Volumes/biologos/Bioinformatics/239999_scRNA_CellChat/Data")
+lymphoid <- readRDS("lymphoid_srt_int.rds")
+myeloid <- readRDS("myeloid_srt_int.rds")
+# Combining the two datasets into a single Seurat object
+combined_data <- merge(x = lymphoid, y = myeloid)
+```
 
+```{r}
 # Define cell types to keep
 cell_types_to_keep <- c("CD3+CD8+ T cells II", "CD14+CD68+ Macrophages II", "CD3+CD4+ T cells I", "CD3+CD8+ T Cells III", "CD3+CD8+ T cells I","CD3+CD4+ T Cells II","CD14+CD68+ Macrophages I","CLEC4+ plasmacytoid DCs")
 
@@ -400,10 +417,5 @@ ggsave("MI_Violin_Plots.png", p_combined2, width=45, height=35,dpi=600)
 ```{r, echo=F}
 ## DO NOT DELETE THIS BLOCK!
 Sys.info()
+sessionInfo()
 ```
-
-
-
-
-
-
