@@ -184,9 +184,11 @@ netVisual_circle(cellchat@net$weight, vertex.weight = groupSize,
 str(cellchat)
 
 # Save the CellChat object for future reference
-# saveRDS(cellchat, file = "Myeloid_Lymphatic_snRNA_snATAC_analysed.rds")
-
+saveRDS(cellchat, file = "Myeloid_Lymphoid_scRNA_cellchat.rds")
 ```
+
+---------------------------------------------------------------
+CONTINUE FROM HERE
 
 ```{r}
 # table(cellchat@meta$patient_region_id)
