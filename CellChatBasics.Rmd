@@ -52,27 +52,70 @@ library(Seurat)
 ```{r}
 # Load your data
 setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Data")
-lymphoid <- readRDS("lymphoid_srt_int.rds")
 myeloid <- readRDS("myeloid_srt_int.rds")
+lymphoid <- readRDS("lymphoid_srt_int.rds")
+
+# Assign cell types to myeloid clusters
+myeloid$cell_type <- factor(
+  recode(myeloid$seurat_clusters,
+         `0` = "IL1B+ APOE+ Macrophages",
+         `1` = "IL1B+ APOE- Macrophages",
+         `2` = "Monocytes",
+         `3` = "KIT+ Mast cells",
+         `4` = "Dendritic cells",
+         `5` = "IL1B- APOE+ Macrophages",
+         `6` = "LYVE1+ Macrophages",
+         `7` = "IFN-associated Myeloid cells"
+  )
+)
+
+# Assign cell types to lymphoid clusters
+lymphoid$cell_type <- factor(
+  recode(lymphoid$seurat_clusters,
+         `0` = "IL7R+ CD4+ Effector T cells",
+         `1` = "GZMK+ CD8+ T cells",
+         `2` = "GZMH+ CD8+ T cells",
+         `3` = "Natural Killer cells",
+         `4` = "CXCL8+ T cells",
+         `5` = "CD79A+ B cells type 1",
+         `6` = "CD79A+ B cells type 2",
+         `7` = "TIGIT+ CD4+ Treg cells",
+         `8` = "Plasma cells"
+  )
+)
+
+# Designate the specific clusters
+myeloid_clusters <- c("IL1B+ APOE+ Macrophages",
+                      "IL1B+ APOE- Macrophages",
+                      "Dendritic cells",
+                      "IL1B- APOE+ Macrophages",
+                      "LYVE1+ Macrophages")
+
+lymphoid_clusters <- c("IL7R+ CD4+ Effector T cells",
+                       "GZMK+ CD8+ T cells",
+                       "GZMH+ CD8+ T cells",
+                       "CXCL8+ T cells",
+                       "TIGIT+ CD4+ Treg cells")
+
+# Subset the Seurat objects based on the cell type
+myeloid_subset <- subset(myeloid, subset = cell_type %in% myeloid_clusters)
+
+lymphoid_subset <- subset(lymphoid, subset = cell_type %in% lymphoid_clusters)
+
+# Check the subset step
+print(unique(myeloid_subset$cell_type))
+print(unique(lymphoid_subset$cell_type))
+
 # Combining the two datasets into a single Seurat object
-combined_data <- merge(x = lymphoid, y = myeloid)
+combined_data <- merge(x = lymphoid_subset, y = myeloid_subset)
 ```
 
 ```{r}
-# Define cell types to keep
-cell_types_to_keep <- c("CD3+CD8+ T cells II", "CD14+CD68+ Macrophages II", "CD3+CD4+ T cells I", "CD3+CD8+ T Cells III", "CD3+CD8+ T cells I","CD3+CD4+ T Cells II","CD14+CD68+ Macrophages I","CLEC4+ plasmacytoid DCs")
-
-# Subset data based on metadata
-subset_seurat <- subset(x = data, subset = cell_type %in% cell_types_to_keep)
-
-# Drop unused factor levels in cell_type
-subset_seurat@meta.data$cell_type <- droplevels(subset_seurat@meta.data$cell_type)
-
-# Check unique cell types in the new Seurat object
-unique(subset_seurat@meta.data$cell_type)
+# Check the merge
+unique(combined_data$cell_type)
 
 # Create a new CellChat object with the subsetted data
-cellchat <- createCellChat(object = subset_seurat, meta = subset_seurat@meta.data, group.by = "cell_type")
+cellchat <- createCellChat(object = combined_data, meta = combined_data@meta.data, group.by = "cell_type")
 ```
 
 ```{r}
