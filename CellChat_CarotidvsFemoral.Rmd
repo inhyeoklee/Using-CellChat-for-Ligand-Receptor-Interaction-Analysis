@@ -41,7 +41,7 @@ cellchat <- readRDS("Myeloid_Lymphoid_scRNA_cellchat.rds")
 table(cellchat@meta$orig.ident)
 ```
 
-## Femoral sample analysis
+## Sample subsetting
 ```{r}
 # Define femoral v.s. carotid
 carotid_ids <- c("carotid 1 & 2", "carotid 3", "carotid 4")
@@ -53,8 +53,9 @@ carotid_data <- combined_data[, combined_data@meta.data$orig.ident %in% carotid_
 femoral_data <- combined_data[, combined_data@meta.data$orig.ident %in% femoral_ids]
 ```
 
+## Carotid sample analysis
 ```{r}
-# Control group
+# carotid
 cellchat_carotid <- createCellChat(object = carotid_data, meta = carotid_data@meta.data, group.by = "cell_type")
 
 # Set the ligand-receptor interaction database
@@ -84,12 +85,10 @@ cellchat_carotid <- projectData(cellchat_carotid, PPI.human)
 ```{r}
 # Compute communication probabilities again
 cellchat_carotid <- computeCommunProb(cellchat_carotid, raw.use = FALSE)
-
 ```
 
 ```{r}
-# Filter out the cell-cell communication if there are only few number of cells 
-# in certain cell groups
+# Filter out the cell-cell communication if there are only few number of cells in certain cell groups
 cellchat_carotid <- filterCommunication(cellchat_carotid, min.cells = 10)
 
 ```
@@ -108,10 +107,10 @@ cellchat_carotid@net$weight
 
 ```
 
-## Carotid sample analysis
+## Femoral sample analysis
 ```{r}
-# Diseased group
-cellchat_diseased <- createCellChat(object = diseased_data, meta = diseased_data@meta.data, group.by = "annotation")
+# femoral group
+cellchat_femoral <- createCellChat(object = femoral_data, meta = femoral_data@meta.data, group.by = "cell_type")
 
 # Set the ligand-receptor interaction database
 CellChatDB.use <- CellChatDB.human
@@ -120,56 +119,56 @@ CellChatDB.use <- CellChatDB.human
 CellChatDB.use <- subsetDB(CellChatDB.human, search = "Secreted Signaling")
 
 # Add the Secreted Signaling database in the CellChat object
-cellchat_diseased@DB <- CellChatDB.use
+cellchat_femoral@DB <- CellChatDB.use
 
 ```
 
 ```{r}
 # Pre-process the expression data
-cellchat_diseased <- subsetData(cellchat_diseased)
-cellchat_diseased <- identifyOverExpressedGenes(cellchat_diseased)
-cellchat_diseased <- identifyOverExpressedInteractions(cellchat_diseased)
+cellchat_femoral <- subsetData(cellchat_femoral)
+cellchat_femoral <- identifyOverExpressedGenes(cellchat_femoral)
+cellchat_femoral <- identifyOverExpressedInteractions(cellchat_femoral)
 
 ```
 
 ```{r}
 # Project gene expression data onto protein-protein interaction (PPI)
-cellchat_diseased <- projectData(cellchat_diseased, PPI.human)
+cellchat_femoral <- projectData(cellchat_femoral, PPI.human)
 ```
 
 ```{r}
 # Compute communication probabilities again
-cellchat_diseased <- computeCommunProb(cellchat_diseased, raw.use = FALSE)
+cellchat_femoral <- computeCommunProb(cellchat_femoral, raw.use = FALSE)
 
 ```
 
 ```{r}
 # Filter out the cell-cell communication if there are only few number of cells 
 # in certain cell groups
-cellchat_diseased <- filterCommunication(cellchat_diseased, min.cells = 10)
+cellchat_femoral <- filterCommunication(cellchat_femoral, min.cells = 10)
 
 
 ```
 
 ```{r}
 # Infer the cell-cell communication at a signaling pathway level
-cellchat_diseased <- computeCommunProbPathway(cellchat_diseased)
+cellchat_femoral <- computeCommunProbPathway(cellchat_femoral)
 
 ```
 
 ```{r}
 # Calculate the aggregated cell-cell communication network
-cellchat_diseased <- aggregateNet(cellchat_diseased)
-cellchat_diseased@net$count
-cellchat_diseased@net$weight
+cellchat_femoral <- aggregateNet(cellchat_femoral)
+cellchat_femoral@net$count
+cellchat_femoral@net$weight
 
 ```
 
-## Network plot visualization of healthy v.s. M.I. populations
+## Network plot visualization of carotid v.s. femoral samples
 ```{r}
 # Calculate group size for each cellchat object
 groupSize_control <- as.numeric(table(cellchat_carotid@idents))
-groupSize_diseased <- as.numeric(table(cellchat_diseased@idents))
+groupSize_femoral <- as.numeric(table(cellchat_femoral@idents))
 
 # Initialize the plot with a layout of 2x2 so that each condition can have two plots (one for interaction count and one for interaction weight)
 par(mfrow = c(2, 2), xpd=TRUE)
@@ -184,11 +183,11 @@ netVisual_circle(cellchat_carotid@net$weight, vertex.weight = groupSize_control,
 dev.off()
 
 png("NetworkPlot_NofInteractions_MI.png", width=5, height=5, units="in", res=600)
-netVisual_circle(cellchat_diseased@net$count, vertex.weight = groupSize_diseased, 
+netVisual_circle(cellchat_femoral@net$count, vertex.weight = groupSize_femoral, 
    weight.scale = T, label.edge= T, title.name = "M.I.: Number of interactions")
 dev.off()
 png("NetworkPlot_InteractionStrength_MI.png", width=5, height=5, units="in", res=600)
-netVisual_circle(cellchat_diseased@net$weight, vertex.weight = groupSize_diseased, 
+netVisual_circle(cellchat_femoral@net$weight, vertex.weight = groupSize_femoral, 
    weight.scale = T, label.edge= F, title.name = "M.I.: Interaction weights/strength")
 dev.off()
 
@@ -203,8 +202,8 @@ print(netAnalysis1)
 dev.off()
 
 png("InteractionStrength_MI.png", width=8, height=8, units="in", res=600)
-cellchat_diseased1 <- netAnalysis_computeCentrality(cellchat_diseased)
-netAnalysis2 <- netAnalysis_signalingRole_scatter(cellchat_diseased1)
+cellchat_femoral1 <- netAnalysis_computeCentrality(cellchat_femoral)
+netAnalysis2 <- netAnalysis_signalingRole_scatter(cellchat_femoral1)
 print(netAnalysis2)
 dev.off()
 
@@ -216,7 +215,7 @@ print(chord1)
 dev.off()
 
 png("ChordDiagram_MI.png", width=20, height=20, units="in", res=600)
-chord2 <- netVisual_chord_gene(cellchat_diseased1, sources.use = c(1,3,4,5), targets.use = 2, lab.cex = 1,show.legend=TRUE)
+chord2 <- netVisual_chord_gene(cellchat_femoral1, sources.use = c(1,3,4,5), targets.use = 2, lab.cex = 1,show.legend=TRUE)
 print(chord2)
 dev.off()
 
@@ -227,12 +226,12 @@ print(bubble1)
 dev.off()
 
 png("BubblePlot_MI.png", width=7, height=10, units="in", res=600)
-bubble2 <- netVisual_bubble(cellchat_diseased1, sources.use = c(1,3,4,5), targets.use = 2, remove.isolate = FALSE, angle.x=45)
+bubble2 <- netVisual_bubble(cellchat_femoral1, sources.use = c(1,3,4,5), targets.use = 2, remove.isolate = FALSE, angle.x=45)
 print(bubble2)
 dev.off()
 ```
 
-## Violin plots of healthy v.s. MI'd populations
+## Violin plots of carotid v.s. femoral samples
 ```{r}
 # install.packages("patchwork")
 library(patchwork)
@@ -244,9 +243,9 @@ gene_list <- c("FLT4", "KDR", "VASH1", "CCBE1", "CD36", "SYK", "MERTK", "AXL", "
 control_data <- NormalizeData(control_data)
 control_data <- ScaleData(control_data, features = gene_list)
 
-# Normalize and scale diseased data
-diseased_data <- NormalizeData(diseased_data)
-diseased_data <- ScaleData(diseased_data, features = gene_list)
+# Normalize and scale femoral data
+femoral_data <- NormalizeData(femoral_data)
+femoral_data <- ScaleData(femoral_data, features = gene_list)
 
 # Generate violin plots for control cells
 p_list <- list()
@@ -260,10 +259,10 @@ p_combined <- wrap_plots(p_list, ncol = 4)
 # Print the combined plot
 print(p_combined)
 
-# Generate violin plots for diseased cells
+# Generate violin plots for femoral cells
 p_list2 <- list()
 for (gene in gene_list) {
-  p_list2[[gene]] <- print(VlnPlot(diseased_data, features = gene, group.by = "annotation"))
+  p_list2[[gene]] <- print(VlnPlot(femoral_data, features = gene, group.by = "annotation"))
 }
 
 # Combine all plots
