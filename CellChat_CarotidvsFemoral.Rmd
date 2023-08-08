@@ -89,7 +89,7 @@ cellchat_carotid <- computeCommunProb(cellchat_carotid, raw.use = FALSE)
 
 ```{r}
 # Filter out the cell-cell communication if there are only few number of cells in certain cell groups
-cellchat_carotid <- filterCommunication(cellchat_carotid, min.cells = 10)
+cellchat_carotid <- filterCommunication(cellchat_carotid, femoraln.cells = 10)
 
 ```
 
@@ -143,10 +143,8 @@ cellchat_femoral <- computeCommunProb(cellchat_femoral, raw.use = FALSE)
 ```
 
 ```{r}
-# Filter out the cell-cell communication if there are only few number of cells 
-# in certain cell groups
-cellchat_femoral <- filterCommunication(cellchat_femoral, min.cells = 10)
-
+# Filter out the cell-cell communication if there are only few number of cells in certain cell groups
+cellchat_femoral <- filterCommunication(cellchat_femoral, femoraln.cells = 10)
 
 ```
 
@@ -167,41 +165,44 @@ cellchat_femoral@net$weight
 ## Network plot visualization of carotid v.s. femoral samples
 ```{r}
 # Calculate group size for each cellchat object
-groupSize_control <- as.numeric(table(cellchat_carotid@idents))
+groupSize_carotid <- as.numeric(table(cellchat_carotid@idents))
 groupSize_femoral <- as.numeric(table(cellchat_femoral@idents))
+
+# Set the working directory 
+setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Visuals")
 
 # Initialize the plot with a layout of 2x2 so that each condition can have two plots (one for interaction count and one for interaction weight)
 par(mfrow = c(2, 2), xpd=TRUE)
 
-png("NetworkPlot_NofInteractions_Control.png", width=5, height=5, units="in", res=600)
-netVisual_circle(cellchat_carotid@net$count, vertex.weight = groupSize_control, 
-   weight.scale = T, label.edge= T, title.name = "Control: Number of interactions")
+png("NetworkPlot_NofInteractions_carotid.png", width=5, height=5, units="in", res=600)
+netVisual_circle(cellchat_carotid@net$count, vertex.weight = groupSize_carotid, 
+   weight.scale = T, label.edge= T, title.name = "carotid: Number of interactions")
 dev.off()
-png("NetworkPlot_InteractionStrength_Control.png", width=5, height=5, units="in", res=600)
-netVisual_circle(cellchat_carotid@net$weight, vertex.weight = groupSize_control, 
-   weight.scale = T, label.edge= F, title.name = "Control: Interaction weights/strength")
+png("NetworkPlot_InteractionStrength_carotid.png", width=5, height=5, units="in", res=600)
+netVisual_circle(cellchat_carotid@net$weight, vertex.weight = groupSize_carotid, 
+   weight.scale = T, label.edge= F, title.name = "carotid: Interaction weights/strength")
 dev.off()
 
-png("NetworkPlot_NofInteractions_MI.png", width=5, height=5, units="in", res=600)
+png("NetworkPlot_NofInteractions_femoral.png", width=5, height=5, units="in", res=600)
 netVisual_circle(cellchat_femoral@net$count, vertex.weight = groupSize_femoral, 
-   weight.scale = T, label.edge= T, title.name = "M.I.: Number of interactions")
+   weight.scale = T, label.edge= T, title.name = "femoral: Number of interactions")
 dev.off()
-png("NetworkPlot_InteractionStrength_MI.png", width=5, height=5, units="in", res=600)
+png("NetworkPlot_InteractionStrength_femoral.png", width=5, height=5, units="in", res=600)
 netVisual_circle(cellchat_femoral@net$weight, vertex.weight = groupSize_femoral, 
-   weight.scale = T, label.edge= F, title.name = "M.I.: Interaction weights/strength")
+   weight.scale = T, label.edge= F, title.name = "femoral: Interaction weights/strength")
 dev.off()
 
 ```
 
 ## Pathway analysis
 ```{r}
-png("InteractionStrength_Control.png", width=8, height=8, units="in", res=600)
+png("InteractionStrength_carotid.png", width=8, height=8, units="in", res=600)
 cellchat_carotid1 <- netAnalysis_computeCentrality(cellchat_carotid)
 netAnalysis1 <- netAnalysis_signalingRole_scatter(cellchat_carotid1)
 print(netAnalysis1)
 dev.off()
 
-png("InteractionStrength_MI.png", width=8, height=8, units="in", res=600)
+png("InteractionStrength_femoral.png", width=8, height=8, units="in", res=600)
 cellchat_femoral1 <- netAnalysis_computeCentrality(cellchat_femoral)
 netAnalysis2 <- netAnalysis_signalingRole_scatter(cellchat_femoral1)
 print(netAnalysis2)
@@ -209,23 +210,23 @@ dev.off()
 
 # show all the interactions sending from MACROPHAGES to LECs
 # Chord diagram
-png("ChordDiagram_Control.png", width=20, height=20, units="in", res=600)
+png("ChordDiagram_carotid.png", width=20, height=20, units="in", res=600)
 chord1 <- netVisual_chord_gene(cellchat_carotid1, sources.use = c(1,3,4,5), targets.use = 2, lab.cex = 1,show.legend=TRUE)
 print(chord1)
 dev.off()
 
-png("ChordDiagram_MI.png", width=20, height=20, units="in", res=600)
+png("ChordDiagram_femoral.png", width=20, height=20, units="in", res=600)
 chord2 <- netVisual_chord_gene(cellchat_femoral1, sources.use = c(1,3,4,5), targets.use = 2, lab.cex = 1,show.legend=TRUE)
 print(chord2)
 dev.off()
 
 # Bubble plot
-png("BubblePlot_Control.png", width=7, height=7, units="in", res=600)
+png("BubblePlot_carotid.png", width=7, height=7, units="in", res=600)
 bubble1 <- netVisual_bubble(cellchat_carotid1, sources.use = c(1,3,4,5), targets.use = 2, remove.isolate = TRUE, angle.x=45)
 print(bubble1)
 dev.off()
 
-png("BubblePlot_MI.png", width=7, height=10, units="in", res=600)
+png("BubblePlot_femoral.png", width=7, height=10, units="in", res=600)
 bubble2 <- netVisual_bubble(cellchat_femoral1, sources.use = c(1,3,4,5), targets.use = 2, remove.isolate = FALSE, angle.x=45)
 print(bubble2)
 dev.off()
@@ -239,18 +240,18 @@ library(patchwork)
 # Define gene list
 gene_list <- c("FLT4", "KDR", "VASH1", "CCBE1", "CD36", "SYK", "MERTK", "AXL", "VEGFC", "IL1B", "IL10", "TNF")
 
-# Normalize and scale control data
-control_data <- NormalizeData(control_data)
-control_data <- ScaleData(control_data, features = gene_list)
+# Normalize and scale carotid data
+carotid_data <- NormalizeData(carotid_data)
+carotid_data <- ScaleData(carotid_data, features = gene_list)
 
 # Normalize and scale femoral data
 femoral_data <- NormalizeData(femoral_data)
 femoral_data <- ScaleData(femoral_data, features = gene_list)
 
-# Generate violin plots for control cells
+# Generate violin plots for carotid cells
 p_list <- list()
 for (gene in gene_list) {
-  p_list[[gene]] <- print(VlnPlot(control_data, features = gene, group.by = "annotation"))
+  p_list[[gene]] <- print(VlnPlot(carotid_data, features = gene, group.by = "annotation"))
 }
 
 # Combine all plots
@@ -272,8 +273,8 @@ p_combined2 <- wrap_plots(p_list2, ncol = 4)
 print(p_combined2)
 
 # Save the combined plot
-ggsave("Control_Violin_Plots.png", p_combined, width=45, height=35,dpi=600)
-ggsave("MI_Violin_Plots.png", p_combined2, width=45, height=35,dpi=600)
+ggsave("carotid_Violin_Plots.png", p_combined, width=45, height=35,dpi=600)
+ggsave("femoral_Violin_Plots.png", p_combined2, width=45, height=35,dpi=600)
 
 ```
 
