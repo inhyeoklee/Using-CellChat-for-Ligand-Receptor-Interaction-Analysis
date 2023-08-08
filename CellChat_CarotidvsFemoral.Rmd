@@ -196,6 +196,9 @@ dev.off()
 
 ## Pathway analysis
 ```{r}
+# Set the working directory 
+setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Visuals")
+
 png("InteractionStrength_carotid.png", width=8, height=8, units="in", res=600)
 cellchat_carotid1 <- netAnalysis_computeCentrality(cellchat_carotid)
 netAnalysis1 <- netAnalysis_signalingRole_scatter(cellchat_carotid1)
@@ -208,26 +211,26 @@ netAnalysis2 <- netAnalysis_signalingRole_scatter(cellchat_femoral1)
 print(netAnalysis2)
 dev.off()
 
-# show all the interactions sending from MACROPHAGES to LECs
+# show all the interactions sending from Myeloid cell types to T cells
 # Chord diagram
 png("ChordDiagram_carotid.png", width=20, height=20, units="in", res=600)
-chord1 <- netVisual_chord_gene(cellchat_carotid1, sources.use = c(1,3,4,5), targets.use = 2, lab.cex = 1,show.legend=TRUE)
+chord1 <- netVisual_chord_gene(cellchat_carotid1, sources.use = c(6,7,9), targets.use = c(3,4,8), lab.cex = 1, link.target.prop = TRUE, show.legend=TRUE)
 print(chord1)
 dev.off()
 
 png("ChordDiagram_femoral.png", width=20, height=20, units="in", res=600)
-chord2 <- netVisual_chord_gene(cellchat_femoral1, sources.use = c(1,3,4,5), targets.use = 2, lab.cex = 1,show.legend=TRUE)
+chord2 <- netVisual_chord_gene(cellchat_femoral1, sources.use = c(1,3,4,5), targets.use = 2, lab.cex = 1, link.target.prop = TRUE, show.legend=TRUE)
 print(chord2)
 dev.off()
 
 # Bubble plot
-png("BubblePlot_carotid.png", width=7, height=7, units="in", res=600)
-bubble1 <- netVisual_bubble(cellchat_carotid1, sources.use = c(1,3,4,5), targets.use = 2, remove.isolate = TRUE, angle.x=45)
+png("BubblePlot_carotid.png", width=8, height=15, units="in", res=600)
+bubble1 <- netVisual_bubble(cellchat_carotid1, sources.use = c(6,7,9), targets.use = c(3,4,8), remove.isolate = TRUE, angle.x=45)
 print(bubble1)
 dev.off()
 
-png("BubblePlot_femoral.png", width=7, height=10, units="in", res=600)
-bubble2 <- netVisual_bubble(cellchat_femoral1, sources.use = c(1,3,4,5), targets.use = 2, remove.isolate = FALSE, angle.x=45)
+png("BubblePlot_femoral.png", width=8, height=15, units="in", res=600)
+bubble2 <- netVisual_bubble(cellchat_femoral1, sources.use = c(6,7,9), targets.use = c(3,4,8), remove.isolate = FALSE, angle.x=45)
 print(bubble2)
 dev.off()
 ```
