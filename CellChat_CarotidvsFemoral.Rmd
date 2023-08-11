@@ -89,7 +89,7 @@ cellchat_carotid <- computeCommunProb(cellchat_carotid, raw.use = FALSE)
 
 ```{r}
 # Filter out the cell-cell communication if there are only few number of cells in certain cell groups
-cellchat_carotid <- filterCommunication(cellchat_carotid, femoraln.cells = 10)
+cellchat_carotid <- filterCommunication(cellchat_carotid, min.cells = 10)
 
 ```
 
@@ -144,7 +144,7 @@ cellchat_femoral <- computeCommunProb(cellchat_femoral, raw.use = FALSE)
 
 ```{r}
 # Filter out the cell-cell communication if there are only few number of cells in certain cell groups
-cellchat_femoral <- filterCommunication(cellchat_femoral, femoraln.cells = 10)
+cellchat_femoral <- filterCommunication(cellchat_femoral, min.cells = 10)
 
 ```
 
@@ -160,6 +160,16 @@ cellchat_femoral <- aggregateNet(cellchat_femoral)
 cellchat_femoral@net$count
 cellchat_femoral@net$weight
 
+```
+## Save CellChat Objects
+```{r}
+# Save CellChat objects
+# saveRDS(cellchat_carotid, file = "carotid_cellchat.rds")
+# saveRDS(cellchat_femoral, file = "femoral_cellchat.rds")
+
+# Recall CellChat objects
+cellchat_carotid <- readRDS("carotid_cellchat.rds")
+cellchat_femoral <- readRDS("femoral_cellchat.rds")
 ```
 
 ## Network plot visualization of carotid v.s. femoral samples
@@ -240,25 +250,26 @@ dev.off()
 # install.packages("patchwork")
 library(patchwork)
 
-# Define gene list
-gene_list <- c("FLT4", "KDR", "VASH1", "CCBE1", "CD36", "SYK", "MERTK", "AXL", "VEGFC", "IL1B", "IL10", "TNF")
-
 # Normalize and scale carotid data
-carotid_data <- NormalizeData(carotid_data)
-carotid_data <- ScaleData(carotid_data, features = gene_list)
+# carotid_data <- NormalizeData(carotid_data)
+# carotid_data <- ScaleData(carotid_data, features = gene_list)
 
 # Normalize and scale femoral data
-femoral_data <- NormalizeData(femoral_data)
-femoral_data <- ScaleData(femoral_data, features = gene_list)
+# femoral_data <- NormalizeData(femoral_data)
+# femoral_data <- ScaleData(femoral_data, features = gene_list)
+
+# Define gene list
+# gene_list <- c("FLT4", "KDR", "VASH1", "CCBE1", "CD36", "SYK", "MERTK", "AXL", "VEGFC", "IL1B", "IL10", "TNF")
+gene_list <- c("SPP1","CD44")
 
 # Generate violin plots for carotid cells
 p_list <- list()
 for (gene in gene_list) {
-  p_list[[gene]] <- print(VlnPlot(carotid_data, features = gene, group.by = "annotation"))
+  p_list[[gene]] <- print(VlnPlot(carotid_data, features = gene, group.by = "cell_type"))
 }
 
-# Combine all plots
-p_combined <- wrap_plots(p_list, ncol = 4)
+# Combine all carotid plots
+p_combined <- wrap_plots(p_list, ncol = 2)
 
 # Print the combined plot
 print(p_combined)
@@ -266,23 +277,61 @@ print(p_combined)
 # Generate violin plots for femoral cells
 p_list2 <- list()
 for (gene in gene_list) {
-  p_list2[[gene]] <- print(VlnPlot(femoral_data, features = gene, group.by = "annotation"))
+  p_list2[[gene]] <- print(VlnPlot(femoral_data, features = gene, group.by = "cell_type"))
 }
 
-# Combine all plots
-p_combined2 <- wrap_plots(p_list2, ncol = 4)
+# Combine all femoral plots
+p_combined2 <- wrap_plots(p_list2, ncol = 2)
 
 # Print the combined plot
 print(p_combined2)
 
+# Combine all plots
+p_combined_1 <- wrap_plots(c(p_list,p_list2), ncol=2)
+
+# Print the combined plot
+print(p_combined_1)
+
 # Save the combined plot
-ggsave("carotid_Violin_Plots.png", p_combined, width=45, height=35,dpi=600)
-ggsave("femoral_Violin_Plots.png", p_combined2, width=45, height=35,dpi=600)
+setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Visuals")
+ggsave("ViolinPlots_CarotidvsFemoral.png", p_combined_1, width=20, height=15,dpi=600)
 
 ```
 
 ```{r}
+# Generate violin plots for carotid cells
+p_list3 <- list()
+for (gene in gene_list) {
+  p_list3[[gene]] <- print(VlnPlot(carotid_data, features = gene, group.by = "orig.ident"))
+}
 
+# Combine all carotid plots
+p_combined3 <- wrap_plots(p_list3, ncol = 2, nrow = 1)
+
+# Print the combined plot
+print(p_combined3)
+
+# Generate violin plots for femoral cells
+p_list4 <- list()
+for (gene in gene_list) {
+  p_list4[[gene]] <- print(VlnPlot(femoral_data, features = gene, group.by = "orig.ident"))
+}
+
+# Combine all femoral plots
+p_combined4 <- wrap_plots(p_list4, ncol = 2, nrow = 1)
+
+# Print the combined plot
+print(p_combined4)
+
+# Combine all plots
+p_combined_2 <- wrap_plots(c(p_list3,p_list4), ncol=2, nrow = 2)
+
+# Print the combined plot
+print(p_combined_2)
+
+# Save the combined plot
+setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Visuals")
+ggsave("ViolinPlots_Sample_Level.png", p_combined_2, width=20, height=15,dpi=600)
 ```
 
 ```{r}
