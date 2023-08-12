@@ -51,7 +51,7 @@ library(Seurat)
 
 ```{r}
 # Load your data
-setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Data")
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Data")
 myeloid <- readRDS("myeloid_srt_int.rds")
 lymphoid <- readRDS("lymphoid_srt_int.rds")
 
@@ -184,6 +184,7 @@ netVisual_circle(cellchat@net$weight, vertex.weight = groupSize,
 str(cellchat)
 
 # Save the CellChat object for future reference
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/CellChatObjects")
 saveRDS(cellchat, file = "Myeloid_Lymphoid_scRNA_cellchat.rds")
 ```
 

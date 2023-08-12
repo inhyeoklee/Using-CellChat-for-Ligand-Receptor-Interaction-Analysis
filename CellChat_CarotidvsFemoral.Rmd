@@ -34,6 +34,9 @@ library(Seurat)
 # Check the merge
 unique(combined_data$cell_type)
 
+# set the working directory for retrieving CellChat objects
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/CellChatObjects")
+
 # Recall the CellChat object
 cellchat <- readRDS("Myeloid_Lymphoid_scRNA_cellchat.rds")
 
@@ -84,7 +87,7 @@ cellchat_carotid <- projectData(cellchat_carotid, PPI.human)
 
 ```{r}
 # Compute communication probabilities again
-cellchat_carotid <- computeCommunProb(cellchat_carotid, raw.use = FALSE)
+cellchat_carotid <- computeCommunProb(cellchat_carotid, raw.use = TRUE)
 ```
 
 ```{r}
@@ -95,13 +98,13 @@ cellchat_carotid <- filterCommunication(cellchat_carotid, min.cells = 10)
 
 ```{r}
 # Infer the cell-cell communication at a signaling pathway level
-cellchat_carotid <- computeCommunProbPathway(cellchat_carotid)
+cellchat_carotid <- computeCommunProbPathway(cellchat_carotid, thresh = 0.05)
 
 ```
 
 ```{r}
 # Calculate the aggregated cell-cell communication network
-cellchat_carotid <- aggregateNet(cellchat_carotid)
+cellchat_carotid <- aggregateNet(cellchat_carotid, remove.isolate = TRUE, thresh = 0.05)
 cellchat_carotid@net$count
 cellchat_carotid@net$weight
 
@@ -138,7 +141,7 @@ cellchat_femoral <- projectData(cellchat_femoral, PPI.human)
 
 ```{r}
 # Compute communication probabilities again
-cellchat_femoral <- computeCommunProb(cellchat_femoral, raw.use = FALSE)
+cellchat_femoral <- computeCommunProb(cellchat_femoral, raw.use = TRUE)
 
 ```
 
@@ -150,19 +153,22 @@ cellchat_femoral <- filterCommunication(cellchat_femoral, min.cells = 10)
 
 ```{r}
 # Infer the cell-cell communication at a signaling pathway level
-cellchat_femoral <- computeCommunProbPathway(cellchat_femoral)
+cellchat_femoral <- computeCommunProbPathway(cellchat_femoral, thresh = 0.05)
 
 ```
 
 ```{r}
 # Calculate the aggregated cell-cell communication network
-cellchat_femoral <- aggregateNet(cellchat_femoral)
+cellchat_femoral <- aggregateNet(cellchat_femoral, remove.isolate = TRUE, thresh = 0.05)
 cellchat_femoral@net$count
 cellchat_femoral@net$weight
 
 ```
 ## Save CellChat Objects
 ```{r}
+# set the working directory for retrieving CellChat objects
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/CellChatObjects")
+
 # Save CellChat objects
 # saveRDS(cellchat_carotid, file = "carotid_cellchat.rds")
 # saveRDS(cellchat_femoral, file = "femoral_cellchat.rds")
@@ -179,68 +185,85 @@ groupSize_carotid <- as.numeric(table(cellchat_carotid@idents))
 groupSize_femoral <- as.numeric(table(cellchat_femoral@idents))
 
 # Set the working directory 
-setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Visuals")
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals")
 
-# Initialize the plot with a layout of 2x2 so that each condition can have two plots (one for interaction count and one for interaction weight)
-par(mfrow = c(2, 2), xpd=TRUE)
-
-png("NetworkPlot_NofInteractions_carotid.png", width=5, height=5, units="in", res=600)
+# Network plot for Carotid
+png("NetworkPlot_NofInteractions_carotid.png", width=8, height=8, units="in", res=600)
 netVisual_circle(cellchat_carotid@net$count, vertex.weight = groupSize_carotid, 
-   weight.scale = T, label.edge= T, title.name = "carotid: Number of interactions")
+   weight.scale = T, label.edge= F, title.name = "carotid: Number of interactions")
 dev.off()
-png("NetworkPlot_InteractionStrength_carotid.png", width=5, height=5, units="in", res=600)
+png("NetworkPlot_InteractionStrength_carotid.png", width=8, height=8, units="in", res=600)
 netVisual_circle(cellchat_carotid@net$weight, vertex.weight = groupSize_carotid, 
-   weight.scale = T, label.edge= F, title.name = "carotid: Interaction weights/strength")
+   weight.scale = T, label.edge= T, title.name = "carotid: Interaction weights/strength")
 dev.off()
 
-png("NetworkPlot_NofInteractions_femoral.png", width=5, height=5, units="in", res=600)
+# Network plot for Femoral
+png("NetworkPlot_NofInteractions_femoral.png", width=8, height=8, units="in", res=600)
 netVisual_circle(cellchat_femoral@net$count, vertex.weight = groupSize_femoral, 
-   weight.scale = T, label.edge= T, title.name = "femoral: Number of interactions")
+   weight.scale = T, label.edge= F, title.name = "femoral: Number of interactions")
 dev.off()
-png("NetworkPlot_InteractionStrength_femoral.png", width=5, height=5, units="in", res=600)
+png("NetworkPlot_InteractionStrength_femoral.png", width=8, height=8, units="in", res=600)
 netVisual_circle(cellchat_femoral@net$weight, vertex.weight = groupSize_femoral, 
-   weight.scale = T, label.edge= F, title.name = "femoral: Interaction weights/strength")
+   weight.scale = T, label.edge= T, title.name = "femoral: Interaction weights/strength")
 dev.off()
 
+# 4 Plots in 1 Image
+# Define the parameters for the loop
+nets <- list(cellchat_carotid@net$count, cellchat_carotid@net$weight, 
+             cellchat_femoral@net$count, cellchat_femoral@net$weight)
+vertex_weights <- c(groupSize_carotid, groupSize_carotid, groupSize_femoral, groupSize_femoral)
+labels_edge <- c(FALSE, FALSE, FALSE, FALSE)
+networkplot_titles <- c("carotid: Number of interactions", "carotid: Interaction weights/strength", 
+           "femoral: Number of interactions", "femoral: Interaction weights/strength")
+
+# png file open
+png("NetworkPlot_CarotidvsFemoral.png", width=14, height=14, units="in", res=600)
+# Loop through the parameters and generate the plots
+par(mfrow = c(2, 2), xpd=TRUE)
+for (i in 1:4) {
+    netVisual_circle(nets[[i]], vertex.weight = vertex_weights[i], 
+                     weight.scale = TRUE, label.edge = labels_edge[i], 
+                     title.name = networkplot_titles[i])
+}
+dev.off()
 ```
 
 ## Pathway analysis
 ```{r}
 # Set the working directory 
-setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Visuals")
-
-png("InteractionStrength_carotid.png", width=8, height=8, units="in", res=600)
-cellchat_carotid1 <- netAnalysis_computeCentrality(cellchat_carotid)
-netAnalysis1 <- netAnalysis_signalingRole_scatter(cellchat_carotid1)
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals")
+png("InteractionStrength_carotid.png", width=6, height=6, units="in", res=600)
+cellchat_carotid <- netAnalysis_computeCentrality(cellchat_carotid)
+netAnalysis1 <- netAnalysis_signalingRole_scatter(cellchat_carotid)
 print(netAnalysis1)
 dev.off()
 
-png("InteractionStrength_femoral.png", width=8, height=8, units="in", res=600)
-cellchat_femoral1 <- netAnalysis_computeCentrality(cellchat_femoral)
-netAnalysis2 <- netAnalysis_signalingRole_scatter(cellchat_femoral1)
+png("InteractionStrength_femoral.png", width=6, height=6, units="in", res=600)
+cellchat_femoral <- netAnalysis_computeCentrality(cellchat_femoral)
+netAnalysis2 <- netAnalysis_signalingRole_scatter(cellchat_femoral)
 print(netAnalysis2)
 dev.off()
 
 # show all the interactions sending from Myeloid cell types to T cells
 # Chord diagram
-png("ChordDiagram_carotid.png", width=20, height=20, units="in", res=600)
-chord1 <- netVisual_chord_gene(cellchat_carotid1, sources.use = c(6,7,9), targets.use = c(3,4,8), lab.cex = 1, link.target.prop = TRUE, show.legend=TRUE)
+png("ChordDiagram_carotid.png", width=11, height=11, units="in", res=600)
+chord1 <- netVisual_chord_gene(cellchat_carotid, sources.use = c(2,5,6,7,9), targets.use = c(1,3,4,8,10), lab.cex = 1, link.target.prop = TRUE, show.legend=TRUE, thresh = 0.05)
 print(chord1)
 dev.off()
 
-png("ChordDiagram_femoral.png", width=20, height=20, units="in", res=600)
-chord2 <- netVisual_chord_gene(cellchat_femoral1, sources.use = c(1,3,4,5), targets.use = 2, lab.cex = 1, link.target.prop = TRUE, show.legend=TRUE)
+png("ChordDiagram_femoral.png", width=11, height=11, units="in", res=600)
+chord2 <- netVisual_chord_gene(cellchat_femoral, sources.use = c(2,5,6,7,9), targets.use = c(1,3,4,8,10), lab.cex = 1, link.target.prop = TRUE, show.legend=TRUE, thresh = 0.05)
 print(chord2)
 dev.off()
 
 # Bubble plot
-png("BubblePlot_carotid.png", width=8, height=15, units="in", res=600)
-bubble1 <- netVisual_bubble(cellchat_carotid1, sources.use = c(6,7,9), targets.use = c(3,4,8), remove.isolate = TRUE, angle.x=45)
+png("BubblePlot_carotid.png", width=10, height=5, units="in", res=600)
+bubble1 <- netVisual_bubble(cellchat_carotid, sources.use = c(2,5,6,7,9), targets.use = c(1,3,4,8,10), remove.isolate = TRUE, angle.x=45, thresh = 0.05)
 print(bubble1)
 dev.off()
 
-png("BubblePlot_femoral.png", width=8, height=15, units="in", res=600)
-bubble2 <- netVisual_bubble(cellchat_femoral1, sources.use = c(6,7,9), targets.use = c(3,4,8), remove.isolate = FALSE, angle.x=45)
+png("BubblePlot_femoral.png", width=10, height=5, units="in", res=600)
+bubble2 <- netVisual_bubble(cellchat_femoral, sources.use = c(2,5,6,7,9), targets.use = c(1,3,4,8,10), remove.isolate = FALSE, angle.x=45, thresh = 0.05)
 print(bubble2)
 dev.off()
 ```
@@ -250,11 +273,9 @@ dev.off()
 # install.packages("patchwork")
 library(patchwork)
 
-# Normalize and scale carotid data
+# Normalize and scale the data
 # carotid_data <- NormalizeData(carotid_data)
 # carotid_data <- ScaleData(carotid_data, features = gene_list)
-
-# Normalize and scale femoral data
 # femoral_data <- NormalizeData(femoral_data)
 # femoral_data <- ScaleData(femoral_data, features = gene_list)
 
@@ -293,11 +314,11 @@ p_combined_1 <- wrap_plots(c(p_list,p_list2), ncol=2)
 print(p_combined_1)
 
 # Save the combined plot
-setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Visuals")
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals")
 ggsave("ViolinPlots_CarotidvsFemoral.png", p_combined_1, width=20, height=15,dpi=600)
-
 ```
 
+## Violin plots for sample-wise comparison
 ```{r}
 # Generate violin plots for carotid cells
 p_list3 <- list()
@@ -330,32 +351,135 @@ p_combined_2 <- wrap_plots(c(p_list3,p_list4), ncol=2, nrow = 2)
 print(p_combined_2)
 
 # Save the combined plot
-setwd("/Volumes/biologos/Bioinformatics/230731_scRNA_CellChat/Visuals")
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals")
 ggsave("ViolinPlots_Sample_Level.png", p_combined_2, width=20, height=15,dpi=600)
 ```
 
+## Ridgeline plots of carotid v.s. femoral samples
 ```{r}
+# ridgeline plot 
+library(ggridges)
+library(ggplot2)
+library(viridis)
+library(hrbrthemes)
 
+gene_list <- c("SPP1","CD44")
+
+# Extract data for carotid cells
+carotid_df <- data.frame(
+  cell_type = carotid_data$cell_type, 
+  SPP1 = FetchData(carotid_data, "SPP1"),
+  CD44 = FetchData(carotid_data, "CD44")
+)
+
+# Extract data for femoral cells
+femoral_df <- data.frame(
+  cell_type = femoral_data$cell_type, 
+  SPP1 = FetchData(femoral_data, "SPP1"),
+  CD44 = FetchData(femoral_data, "CD44")
+)
+
+# Generate ridgeline plots for carotid cells
+p_list5 <- list()
+for (gene in gene_list) {
+  p_list5[[gene]] <- ggplot(carotid_df, aes(x = carotid_df[[gene]], y = cell_type, fill = ..x..)) +
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
+    scale_fill_viridis(name = paste0(gene, " Expression"), option = "M") +  # Switched to 'M' for magma
+    labs(title = paste0('Expression of ', gene, ' in Carotid Cells')) +
+    theme_ipsum() +
+      theme(
+        legend.position="none",
+        panel.spacing = unit(0.1, "lines"),
+        strip.text.x = element_text(size = 8)
+      )
+  print(p_list5[[gene]])
+}
+
+# Generate ridgeline plots for femoral cells
+p_list6 <- list()
+for (gene in gene_list) {
+  p_list6[[gene]] <- ggplot(femoral_df, aes(x = femoral_df[[gene]], y = cell_type, fill = ..x..)) +
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
+    scale_fill_viridis(name = paste0(gene, " Expression"), option = "M") +  # Switched to 'M' for magma
+    labs(title = paste0('Expression of ', gene, ' in Femoral Cells')) +
+    theme_ipsum() +
+      theme(
+        legend.position="none",
+        panel.spacing = unit(0.1, "lines"),
+        strip.text.x = element_text(size = 8)
+      )
+  print(p_list6[[gene]])
+}
+
+# Assuming wrap_plots is from the patchwork library, this remains unchanged
+# Combine all plots
+p_combined_3 <- wrap_plots(c(p_list5,p_list6), ncol=2)
+
+# Print the combined plot
+print(p_combined_3)
+
+# Save the combined plot
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals")
+ggsave("RidgelinePlots_CarotidvsFemoral.png", p_combined_3, width=20, height=15,dpi=600)
 ```
 
+## Ridgeline plots for sample-wise comparison
 ```{r}
+# Extract data for carotid cells at the sample level
+carotid_df_sample <- data.frame(
+  orig_ident = carotid_data$orig.ident, 
+  SPP1 = FetchData(carotid_data, "SPP1"),
+  CD44 = FetchData(carotid_data, "CD44")
+)
 
-```
+# Extract data for femoral cells at the sample level
+femoral_df_sample <- data.frame(
+  orig_ident = femoral_data$orig.ident, 
+  SPP1 = FetchData(femoral_data, "SPP1"),
+  CD44 = FetchData(femoral_data, "CD44")
+)
 
-```{r}
+# Generate ridgeline plots for carotid cells at the sample level
+p_list7 <- list()
+for (gene in gene_list) {
+  p_list7[[gene]] <- ggplot(carotid_df_sample, aes(x = carotid_df_sample[[gene]], y = orig_ident, fill = ..x..)) +
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
+    scale_fill_viridis(name = paste0(gene, " Expression"), option = "M") +  # Using 'M' for magma
+    labs(title = paste0('Expression of ', gene, ' in Carotid Samples')) +
+    theme_ipsum() +
+      theme(
+        legend.position="none",
+        panel.spacing = unit(0.1, "lines"),
+        strip.text.x = element_text(size = 8)
+      )
+  print(p_list7[[gene]])
+}
 
-```
+# Generate ridgeline plots for femoral cells at the sample level
+p_list8 <- list()
+for (gene in gene_list) {
+  p_list8[[gene]] <- ggplot(femoral_df_sample, aes(x = femoral_df_sample[[gene]], y = orig_ident, fill = ..x..)) +
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
+    scale_fill_viridis(name = paste0(gene, " Expression"), option = "M") +  # Using 'M' for magma
+    labs(title = paste0('Expression of ', gene, ' in Femoral Samples')) +
+    theme_ipsum() +
+      theme(
+        legend.position="none",
+        panel.spacing = unit(0.1, "lines"),
+        strip.text.x = element_text(size = 8)
+      )
+  print(p_list8[[gene]])
+}
 
-```{r}
+# Combine all plots
+p_combined_4 <- wrap_plots(c(p_list7,p_list8), ncol=2, nrow = 2)
 
-```
+# Print the combined plot
+print(p_combined_4)
 
-```{r}
-
-```
-
-```{r}
-
+# Save the combined plot
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals")
+ggsave("RidgelinePlots_Sample_Level.png", p_combined_4, width=20, height=15, dpi=600)
 ```
 
 ```{r, echo=F}
