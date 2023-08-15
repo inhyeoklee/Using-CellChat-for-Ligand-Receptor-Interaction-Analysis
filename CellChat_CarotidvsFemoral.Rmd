@@ -383,8 +383,8 @@ femoral_df <- data.frame(
 p_list5 <- list()
 for (gene in gene_list) {
   p_list5[[gene]] <- ggplot(carotid_df, aes(x = carotid_df[[gene]], y = cell_type, fill = ..x..)) +
-    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
-    scale_fill_viridis(name = paste0(gene, " Expression"), option = "M") +  # Switched to 'M' for magma
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, color = "#8C92AC") +  # Added color argument
+    scale_fill_viridis(name = paste0(gene, " Expression"), option = "F") +
     labs(title = paste0('Expression of ', gene, ' in Carotid Cells')) +
     theme_ipsum() +
       theme(
@@ -399,8 +399,8 @@ for (gene in gene_list) {
 p_list6 <- list()
 for (gene in gene_list) {
   p_list6[[gene]] <- ggplot(femoral_df, aes(x = femoral_df[[gene]], y = cell_type, fill = ..x..)) +
-    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
-    scale_fill_viridis(name = paste0(gene, " Expression"), option = "M") +  # Switched to 'M' for magma
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, color = "#8C92AC") +  # Added color argument
+    scale_fill_viridis(name = paste0(gene, " Expression"), option = "G") +
     labs(title = paste0('Expression of ', gene, ' in Femoral Cells')) +
     theme_ipsum() +
       theme(
@@ -411,7 +411,6 @@ for (gene in gene_list) {
   print(p_list6[[gene]])
 }
 
-# Assuming wrap_plots is from the patchwork library, this remains unchanged
 # Combine all plots
 p_combined_3 <- wrap_plots(c(p_list5,p_list6), ncol=2)
 
@@ -443,8 +442,8 @@ femoral_df_sample <- data.frame(
 p_list7 <- list()
 for (gene in gene_list) {
   p_list7[[gene]] <- ggplot(carotid_df_sample, aes(x = carotid_df_sample[[gene]], y = orig_ident, fill = ..x..)) +
-    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
-    scale_fill_viridis(name = paste0(gene, " Expression"), option = "M") +  # Using 'M' for magma
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, color = "#8C92AC") +  # Added color argument
+    scale_fill_viridis(name = paste0(gene, " Expression"), option = "F") +
     labs(title = paste0('Expression of ', gene, ' in Carotid Samples')) +
     theme_ipsum() +
       theme(
@@ -459,8 +458,8 @@ for (gene in gene_list) {
 p_list8 <- list()
 for (gene in gene_list) {
   p_list8[[gene]] <- ggplot(femoral_df_sample, aes(x = femoral_df_sample[[gene]], y = orig_ident, fill = ..x..)) +
-    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
-    scale_fill_viridis(name = paste0(gene, " Expression"), option = "M") +  # Using 'M' for magma
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, color = "#8C92AC") +  # Added color argument
+    scale_fill_viridis(name = paste0(gene, " Expression"), option = "G") +
     labs(title = paste0('Expression of ', gene, ' in Femoral Samples')) +
     theme_ipsum() +
       theme(
