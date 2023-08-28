@@ -1,4 +1,6 @@
 ## CellChat Analysis: Carotid v.s. Femoral Atherosclerotic Plaques
+![ChordDiagram_femoral](https://github.com/inhyeoklee/Using-CellChat-for-Ligand-Receptor-Interaction-Analysis/assets/8275926/2f12d5c9-1ca0-41ee-9c62-2374275308c8)
+
 ### **Introduction**
 This repository contains Rmarkdown files that detail the workflow for performing CellChat analysis on single-cell RNA sequencing data. The analysis is aimed at comparing gene expression patterns across different cell types and samples, particularly focusing on the carotid and femoral cell types.
 
