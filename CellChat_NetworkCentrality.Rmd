@@ -1,0 +1,252 @@
+---
+title: "CellChat_NetworkCentrality"
+author: "Daniel Lee"
+date: "2023-09-26"
+output: pdf_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE,  
+                      warning = FALSE, message = FALSE, 
+                      fig.align = "center",
+                      R.options = list(max.print=100))
+```
+
+```{r}
+getwd()
+# running renv
+# install.packages("renv")
+library(renv)
+# renv::init()
+# renv::snapshot()
+# renv::status()
+# renv::clean()
+# renv::restore()
+# renv::history()
+```
+
+```{r}
+library(CellChat)
+library(Seurat)
+```
+
+```{r}
+# Load your data
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Data")
+myeloid <- readRDS("myeloid_srt_int.rds")
+lymphoid <- readRDS("lymphoid_srt_int.rds")
+
+# Assign cell types to myeloid clusters
+myeloid$cell_type <- factor(
+  recode(myeloid$seurat_clusters,
+         `0` = "IL1B+ APOE+ Macrophages",
+         `1` = "IL1B+ APOE- Macrophages",
+         `2` = "Monocytes",
+         `3` = "KIT+ Mast cells",
+         `4` = "Dendritic cells",
+         `5` = "IL1B- APOE+ Macrophages",
+         `6` = "LYVE1+ Macrophages",
+         `7` = "IFN-associated Myeloid cells"
+  )
+)
+
+# Assign cell types to lymphoid clusters
+lymphoid$cell_type <- factor(
+  recode(lymphoid$seurat_clusters,
+         `0` = "IL7R+ CD4+ Effector T cells",
+         `1` = "GZMK+ CD8+ T cells",
+         `2` = "GZMH+ CD8+ T cells",
+         `3` = "Natural Killer cells",
+         `4` = "CXCL8+ T cells",
+         `5` = "CD79A+ B cells type 1",
+         `6` = "CD79A+ B cells type 2",
+         `7` = "TIGIT+ CD4+ Treg cells",
+         `8` = "Plasma cells"
+  )
+)
+
+# Designate the specific clusters
+# myeloid_clusters <- c("IL1B+ APOE+ Macrophages",
+#                       "IL1B+ APOE- Macrophages",
+#                       "Dendritic cells",
+#                       "IL1B- APOE+ Macrophages",
+#                       "LYVE1+ Macrophages")
+# 
+# lymphoid_clusters <- c("IL7R+ CD4+ Effector T cells",
+#                        "GZMK+ CD8+ T cells",
+#                        "GZMH+ CD8+ T cells",
+#                        "CXCL8+ T cells",
+#                        "TIGIT+ CD4+ Treg cells")
+
+# Subset the Seurat objects based on the cell type
+# myeloid_subset <- subset(myeloid, subset = cell_type %in% myeloid_clusters)
+#
+# lymphoid_subset <- subset(lymphoid, subset = cell_type %in% lymphoid_clusters)
+
+# Check the subset step
+# print(unique(myeloid_subset$cell_type))
+# print(unique(lymphoid_subset$cell_type))
+
+# Offset the seurat_clusters in the lymphoid dataset
+lymphoid$seurat_clusters <- as.numeric(lymphoid$seurat_clusters) + max(as.numeric(myeloid$seurat_clusters)) -1
+unique(lymphoid$seurat_clusters)
+
+# Combining the two datasets into a single Seurat object
+combined_data <- merge(x = lymphoid, y = myeloid)
+unique(combined_data@meta.data$seurat_clusters)
+```
+
+## Sample subsetting
+```{r}
+# Define femoral v.s. carotid
+carotid_ids <- c("carotid 1 & 2", "carotid 3", "carotid 4")
+femoral_ids <- setdiff(unique(combined_data@meta.data$orig.ident), carotid_ids)
+# Subset the combined data for each group
+carotid_data <- combined_data[, combined_data@meta.data$orig.ident %in% carotid_ids]
+femoral_data <- combined_data[, combined_data@meta.data$orig.ident %in% femoral_ids]
+
+# Get the unique cell_type labels in the order of the seurat_clusters
+ordered_cell_types <- unique(combined_data$cell_type[order(as.numeric(combined_data$seurat_clusters))])
+# Set the levels of the cell_type factor based on this order
+carotid_data$cell_type <- factor(carotid_data$cell_type, levels = ordered_cell_types)
+femoral_data$cell_type <- factor(femoral_data$cell_type, levels = ordered_cell_types)
+
+# Additional cell marker checks
+p1 <- VlnPlot(carotid_data, features = "MIF", group.by = "cell_type") + ggtitle("MIF Expression in Carotid Data")
+print(p1)
+p2 <- VlnPlot(femoral_data, features = "MIF", group.by = "cell_type") + ggtitle("MIF Expression in Femoral Data")
+print(p2)
+p3 <- VlnPlot(carotid_data, features = "SPP1", group.by = "cell_type") + ggtitle("SPP1 Expression in Carotid Data")
+print(p3)
+p4 <- VlnPlot(femoral_data, features = "SPP1", group.by = "cell_type") + ggtitle("SPP1 Expression in Femoral Data")
+print(p4)
+
+```
+
+## Carotid sample analysis
+```{r}
+# carotid
+cellchat_carotid <- createCellChat(object = carotid_data, meta = carotid_data@meta.data, group.by = "cell_type")
+
+# Set the ligand-receptor interaction database
+CellChatDB.use <- CellChatDB.human
+
+# Using a subset of CellChatDB for cell-cell communication analysis
+CellChatDB.use <- subsetDB(CellChatDB.human, search = "Secreted Signaling")
+
+# Add the Secreted Signaling database in the CellChat object
+cellchat_carotid@DB <- CellChatDB.use
+
+```
+
+```{r}
+# Pre-process the expression data
+cellchat_carotid <- subsetData(cellchat_carotid)
+cellchat_carotid <- identifyOverExpressedGenes(cellchat_carotid)
+cellchat_carotid <- identifyOverExpressedInteractions(cellchat_carotid)
+
+```
+
+```{r}
+# Project gene expression data onto protein-protein interaction (PPI)
+cellchat_carotid <- projectData(cellchat_carotid, PPI.human)
+```
+
+```{r}
+# Compute communication probabilities again
+cellchat_carotid <- computeCommunProb(cellchat_carotid, raw.use = TRUE)
+```
+
+```{r}
+# Filter out the cell-cell communication if there are only few number of cells in certain cell groups
+cellchat_carotid <- filterCommunication(cellchat_carotid, min.cells = 10)
+
+```
+
+```{r}
+# Infer the cell-cell communication at a signaling pathway level
+cellchat_carotid <- computeCommunProbPathway(cellchat_carotid, thresh = 0.05)
+
+```
+
+```{r}
+# Calculate the aggregated cell-cell communication network
+cellchat_carotid <- aggregateNet(cellchat_carotid, remove.isolate = TRUE, thresh = 0.05)
+cellchat_carotid@net$count
+cellchat_carotid@net$weight
+
+```
+
+## Femoral sample analysis
+```{r}
+# femoral group
+cellchat_femoral <- createCellChat(object = femoral_data, meta = femoral_data@meta.data, group.by = "cell_type")
+
+# Set the ligand-receptor interaction database
+CellChatDB.use <- CellChatDB.human
+
+# Using a subset of CellChatDB for cell-cell communication analysis
+CellChatDB.use <- subsetDB(CellChatDB.human, search = "Secreted Signaling")
+
+# Add the Secreted Signaling database in the CellChat object
+cellchat_femoral@DB <- CellChatDB.use
+
+```
+
+```{r}
+# Pre-process the expression data
+cellchat_femoral <- subsetData(cellchat_femoral)
+cellchat_femoral <- identifyOverExpressedGenes(cellchat_femoral)
+cellchat_femoral <- identifyOverExpressedInteractions(cellchat_femoral)
+
+```
+
+```{r}
+# Project gene expression data onto protein-protein interaction (PPI)
+cellchat_femoral <- projectData(cellchat_femoral, PPI.human)
+```
+
+```{r}
+# Compute communication probabilities again
+cellchat_femoral <- computeCommunProb(cellchat_femoral, raw.use = TRUE)
+
+```
+
+```{r}
+# Filter out the cell-cell communication if there are only few number of cells in certain cell groups
+cellchat_femoral <- filterCommunication(cellchat_femoral, min.cells = 10)
+
+```
+
+```{r}
+# Infer the cell-cell communication at a signaling pathway level
+cellchat_femoral <- computeCommunProbPathway(cellchat_femoral, thresh = 0.05)
+
+```
+
+```{r}
+# Calculate the aggregated cell-cell communication network
+cellchat_femoral <- aggregateNet(cellchat_femoral, remove.isolate = TRUE, thresh = 0.05)
+cellchat_femoral@net$count
+cellchat_femoral@net$weight
+
+```
+## Save CellChat Objects
+```{r}
+# set the working directory for retrieving CellChat objects
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/CellChatObjects")
+
+# Save CellChat objects
+saveRDS(cellchat_carotid, file = "fullcarotid_cellchat.rds")
+saveRDS(cellchat_femoral, file = "fullfemoral_cellchat.rds")
+
+# Recall CellChat objects
+cellchat_carotid <- readRDS("fullcarotid_cellchat.rds")
+cellchat_femoral <- readRDS("fullfemoral_cellchat.rds")
+```
+
+```{r, echo=F}
+## DO NOT DELETE THIS BLOCK!
+Sys.info()
+sessionInfo()
+```
