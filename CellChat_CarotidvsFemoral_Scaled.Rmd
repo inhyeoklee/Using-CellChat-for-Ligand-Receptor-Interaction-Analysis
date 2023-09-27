@@ -1,5 +1,5 @@
 ---
-title: "CellChat_DifferentialExpression"
+title: "CellChat_CarotidvsFemoral_Scaled"
 author: "Daniel Lee"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
@@ -45,6 +45,7 @@ cellchat_femoral <- readRDS("femoral_cellchat.rds")
 cellchat_carotid <- updateCellChat(cellchat_carotid)
 cellchat_femoral <- updateCellChat(cellchat_femoral)
 ```
+
 ```{r}
 object.list <- list(carotid=cellchat_carotid, femoral=cellchat_femoral)
 cellchat <- mergeCellChat(object.list, add.names = names(object.list), cell.prefix = TRUE)
@@ -57,6 +58,7 @@ gg2 <- netVisual_heatmap(cellchat, measure = "weight")
 #> Do heatmap based on a merged object
 gg1 + gg2
 ```
+
 ```{r}
 # Compute and visualize the pathway distance in the learned joint manifold
 rankSimilarity(cellchat, type = "functional")
