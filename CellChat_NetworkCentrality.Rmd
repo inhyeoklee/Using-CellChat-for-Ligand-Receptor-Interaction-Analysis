@@ -123,6 +123,67 @@ print(p4)
 
 ```
 
+```{r}
+# Plot for MIF in myeloid cells
+p5 <- VlnPlot(myeloid, features = "MIF", group.by = "cell_type", split.by = "type") + ggtitle("MIF Expression in Myeloid Cells")
+
+# Plot for SPP1 in lymphoid cells
+p6 <- VlnPlot(myeloid, features = "SPP1", group.by = "cell_type", split.by = "type") + ggtitle("SPP1 Expression in Myeloid Cells")
+p5+p6
+
+# Plot for CD44 in lymphoid cells
+p7 <- VlnPlot(lymphoid, features = "CD44", group.by = "cell_type", split.by = "type") + ggtitle("CD44 Expression in Lymphoid Cells")
+
+# Plot for CD74 in lymphoid cells
+p8 <- VlnPlot(lymphoid, features = "CD74", group.by = "cell_type", split.by = "type") + ggtitle("CD74 Expression in Lymphoid Cells")
+
+# Plot for CXCR4 in lymphoid cells
+p9 <- VlnPlot(lymphoid, features = "CXCR4", group.by = "cell_type", split.by = "type") + ggtitle("CXCR4 Expression in Lymphoid Cells")
+p7+p8+p9
+
+# Wilcox Test
+# List of genes to test
+genes_to_test_myeloid <- c("SPP1", "MIF")
+genes_to_test_lymphoid <- c("CD44", "CD74", "CXCR4")
+
+# Function to perform differential expression for each cell type
+perform_DE_for_each_cell_type <- function(seurat_obj, genes_to_test) {
+  unique_cell_types <- unique(seurat_obj$cell_type)
+  all_results <- list()
+  
+  for (current_cell_type in unique_cell_types) {
+    # Subset the Seurat object for the current cell type
+    subset_data <- subset(seurat_obj, subset = cell_type == current_cell_type)
+    
+    # Perform differential expression between carotid and femoral
+    markers <- FindMarkers(subset_data, group.by = "type", ident.1 = "carotid", ident.2 = "femoral", features = genes_to_test)
+    
+    # Store the results in the list
+    all_results[[current_cell_type]] <- markers
+  }
+  
+  return(all_results)
+}
+
+
+# Perform differential expression for each cell type in myeloid dataset
+myeloid_results <- perform_DE_for_each_cell_type(myeloid, genes_to_test_myeloid)
+
+# Perform differential expression for each cell type in lymphoid dataset
+lymphoid_results <- perform_DE_for_each_cell_type(lymphoid, genes_to_test_lymphoid)
+
+myeloid_results
+lymphoid_results
+
+
+
+library(ggpubr)
+# As an example for the MIF plot in myeloid cells
+p5 + geom_signif(comparisons = list(c("Carotid", "Femoral")), test = "wilcox.test", map_signif_level = TRUE)
+
+
+```
+
 ## Carotid sample analysis
 ```{r}
 # carotid
@@ -249,6 +310,10 @@ cellchat_femoral <- readRDS("fullfemoral_cellchat.rds")
 # Compute network centrality
 cellchat_carotid <- netAnalysis_computeCentrality(cellchat_carotid, slot.name = "netP")
 cellchat_femoral <- netAnalysis_computeCentrality(cellchat_femoral, slot.name = "netP")
+
+# Find available genes
+available_genes <- cellchat_carotid@data.signaling@Dimnames[[1]]
+print(available_genes)
 
 # Signaling network roles
 netAnalysis_signalingRole_network(cellchat_carotid, signaling = "MIF", width = 8, height = 4, font.size = 12)
