@@ -140,47 +140,47 @@ p8 <- VlnPlot(lymphoid, features = "CD74", group.by = "cell_type", split.by = "t
 # Plot for CXCR4 in lymphoid cells
 p9 <- VlnPlot(lymphoid, features = "CXCR4", group.by = "cell_type", split.by = "type") + ggtitle("CXCR4 Expression in Lymphoid Cells")
 p7+p8+p9
+```
 
+```{r}
 # Wilcox Test
-# List of genes to test
-genes_to_test_myeloid <- c("SPP1", "MIF")
-genes_to_test_lymphoid <- c("CD44", "CD74", "CXCR4")
+library(ggpubr)
+library(gridExtra)
 
-# Function to perform differential expression for each cell type
-perform_DE_for_each_cell_type <- function(seurat_obj, genes_to_test) {
-  unique_cell_types <- unique(seurat_obj$cell_type)
-  all_results <- list()
-  
-  for (current_cell_type in unique_cell_types) {
-    # Subset the Seurat object for the current cell type
-    subset_data <- subset(seurat_obj, subset = cell_type == current_cell_type)
-    
-    # Perform differential expression between carotid and femoral
-    markers <- FindMarkers(subset_data, group.by = "type", ident.1 = "carotid", ident.2 = "femoral", features = genes_to_test)
-    
-    # Store the results in the list
-    all_results[[current_cell_type]] <- markers
-  }
-  
-  return(all_results)
+add_stat_comparison <- function(plot) {
+  return(
+    plot + 
+      stat_compare_means(label = "p.signif",
+                         # aes(label=..p.adj..),
+                         symnum.args = list(cutpoints = c(0, 0.05, Inf), 
+                                            symbols = c("*", "")),
+                         method = "wilcox.test",
+                         paired = FALSE,
+                         hide.ns = F)
+  )
 }
 
+# Using lapply to apply the function to each plot object
+plot_list <- list(p5, p6, p7, p8, p9)
+plot_list_updated <- lapply(plot_list, add_stat_comparison)
 
-# Perform differential expression for each cell type in myeloid dataset
-myeloid_results <- perform_DE_for_each_cell_type(myeloid, genes_to_test_myeloid)
+# Assigning the modified plots back to the original variables
+p5 <- plot_list_updated[[1]]
+p6 <- plot_list_updated[[2]]
+p7 <- plot_list_updated[[3]]
+p8 <- plot_list_updated[[4]]
+p9 <- plot_list_updated[[5]]
 
-# Perform differential expression for each cell type in lymphoid dataset
-lymphoid_results <- perform_DE_for_each_cell_type(lymphoid, genes_to_test_lymphoid)
+# Set the working directory 
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals/Comparison")
 
-myeloid_results
-lymphoid_results
+# Combine and save p5 + p6
+combined_plot_1 <- arrangeGrob(p5, p6, ncol=2)
+ggsave("myeloid_violinplot.png", combined_plot_1, dpi=600, width=10, height=5)
 
-
-
-library(ggpubr)
-# As an example for the MIF plot in myeloid cells
-p5 + geom_signif(comparisons = list(c("Carotid", "Femoral")), test = "wilcox.test", map_signif_level = TRUE)
-
+# Combine and save p7 + p8 + p9
+combined_plot_2 <- arrangeGrob(p7, p8, p9, ncol=3)
+ggsave("lymphoid_violinplot.png", combined_plot_2, dpi=600, width=15, height=5)
 
 ```
 
