@@ -143,44 +143,144 @@ p7+p8+p9
 ```
 
 ```{r}
+library(dplyr)
+library(tidyr)
+library(gridExtra)
+library(grid)
+
+# List of genes of interest
+genes_of_interest <- c("MIF", "SPP1", "CD44", "CD74", "CXCR4")
+
+# Fetch the expression data for these genes from the `myeloid` Seurat object:
+expression_data <- combined_data@assays$RNA@data[genes_of_interest,]
+
+# Extract metadata to group by "cell_type" and "type":
+metadata <- combined_data@meta.data[, c("cell_type", "type")]
+
+# Function to calculate mean expressions for a given gene
+calculate_mean <- function(gene_name) {
+  gene_expression <- expression_data[gene_name,]
+  combined_df <- data.frame(Gene_Expression=gene_expression, metadata)
+  
+  mean_values <- combined_df %>%
+    group_by(cell_type, type) %>%
+    summarise(mean_expression = mean(Gene_Expression, na.rm = T)) %>%
+    mutate(Gene = gene_name)
+  
+  return(mean_values)
+}
+
+# Use lapply to get mean values for all genes and bind them into a single data frame
+all_mean_values <- do.call(rbind, lapply(genes_of_interest, calculate_mean))
+
+# Spread the table to have genes as columns and mean expression values as rows
+clean_table <- all_mean_values %>%
+  spread(key = Gene, value = mean_expression)
+
+# View the clean summary table
+print(clean_table)
+
+# Set the working directory 
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals/Comparison")
+
+# Convert table to a grid object
+table_plot <- tableGrob(clean_table)
+
+# Save the grid object as PNG
+png("clean_table.png", width=650, height=750)  # Adjust width and height as necessary
+grid.draw(table_plot)
+dev.off()
+```
+
+```{r}
 # Wilcox Test
 library(ggpubr)
 library(gridExtra)
 
-add_stat_comparison <- function(plot) {
-  return(
-    plot + 
-      stat_compare_means(label = "p.signif",
+p5 + stat_compare_means(# label = "p.signif",
                          # aes(label=..p.adj..),
                          symnum.args = list(cutpoints = c(0, 0.05, Inf), 
                                             symbols = c("*", "")),
                          method = "wilcox.test",
                          paired = FALSE,
                          hide.ns = F)
-  )
-}
 
-# Using lapply to apply the function to each plot object
-plot_list <- list(p5, p6, p7, p8, p9)
-plot_list_updated <- lapply(plot_list, add_stat_comparison)
+p6 + stat_compare_means(# label = "p.signif",
+                         # aes(label=..p.adj..),
+                         symnum.args = list(cutpoints = c(0, 0.05, Inf), 
+                                            symbols = c("*", "")),
+                         method = "wilcox.test",
+                         paired = FALSE,
+                         hide.ns = F)
 
-# Assigning the modified plots back to the original variables
-p5 <- plot_list_updated[[1]]
-p6 <- plot_list_updated[[2]]
-p7 <- plot_list_updated[[3]]
-p8 <- plot_list_updated[[4]]
-p9 <- plot_list_updated[[5]]
+p7 + stat_compare_means(# label = "p.signif",
+                         # aes(label=..p.adj..),
+                         symnum.args = list(cutpoints = c(0, 0.05, Inf), 
+                                            symbols = c("*", "")),
+                         method = "wilcox.test",
+                         paired = FALSE,
+                         hide.ns = F)
 
+p8 + stat_compare_means(# label = "p.signif",
+                        # aes(label=..p.adj..),
+                         symnum.args = list(cutpoints = c(0, 0.05, Inf), 
+                                            symbols = c("*", "")),
+                         method = "wilcox.test",
+                         paired = FALSE,
+                         hide.ns = F)
+
+p9 + stat_compare_means(# label = "p.signif",
+                        # aes(label=..p.adj..),
+                         symnum.args = list(cutpoints = c(0, 0.05, Inf), 
+                                            symbols = c("*", "")),
+                         method = "wilcox.test",
+                         paired = FALSE,
+                         hide.ns = F)
+
+# add_stat_comparison <- function(plot) {
+#   return(
+#     plot + 
+#       stat_compare_means(label = "p.signif",
+#                          # aes(label=..p.adj..),
+#                          symnum.args = list(cutpoints = c(0, 0.05, Inf), 
+#                                             symbols = c("*", "")),
+#                          method = "wilcox.test",
+#                          paired = FALSE,
+#                          hide.ns = F)
+#   )
+# }
+# 
+# # Using lapply to apply the function to each plot object
+# plot_list <- list(p5, p6, p7, p8, p9)
+# plot_list_updated <- lapply(plot_list, add_stat_comparison)
+# 
+# # Assigning the modified plots back to the original variables
+# p5 <- plot_list_updated[[1]]
+# p6 <- plot_list_updated[[2]]
+# p7 <- plot_list_updated[[3]]
+# p8 <- plot_list_updated[[4]]
+# p9 <- plot_list_updated[[5]]
+```
+
+```{r}
 # Set the working directory 
 setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals/Comparison")
 
 # Combine and save p5 + p6
-combined_plot_1 <- arrangeGrob(p5, p6, ncol=2)
-ggsave("myeloid_violinplot.png", combined_plot_1, dpi=600, width=10, height=5)
+# combined_plot_1 <- arrangeGrob(p5, p6, ncol=2)
+# ggsave("myeloid_violinplot.png", combined_plot_1, dpi=600, width=30, height=10)
+library(showtext)
+showtext_auto()
+showtext_opts(dpi=600)
+ggsave("myeloid_violinplot_MIF.png", p5, dpi=600, width=14, height=5)
+ggsave("myeloid_violinplot_SPP1.png", p6, dpi=600, width=14, height=5)
 
 # Combine and save p7 + p8 + p9
-combined_plot_2 <- arrangeGrob(p7, p8, p9, ncol=3)
-ggsave("lymphoid_violinplot.png", combined_plot_2, dpi=600, width=15, height=5)
+# combined_plot_2 <- arrangeGrob(p7, p8, p9, ncol=3)
+# ggsave("lymphoid_violinplot.png", combined_plot_2, dpi=600, width=42, height=10)
+ggsave("lymphoid_violinplot_CD44.png", p7, dpi=600, width=15, height=4.5)
+ggsave("lymphoid_violinplot_CD74.png", p8, dpi=600, width=15, height=4.5)
+ggsave("lymphoid_violinplot_CXCR4.png", p9, dpi=600, width=15, height=4.5)
 
 ```
 
