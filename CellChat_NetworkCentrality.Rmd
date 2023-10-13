@@ -1,7 +1,7 @@
 ---
 title: "CellChat_NetworkCentrality"
 author: "Daniel Lee"
-date: "2023-09-26"
+date: "2023-10-13"
 output: pdf_document
 ---
 
@@ -13,7 +13,6 @@ knitr::opts_chunk$set(echo = TRUE, eval = TRUE,
 ```
 
 ```{r}
-getwd()
 # running renv
 # install.packages("renv")
 library(renv)
@@ -129,6 +128,7 @@ p5 <- VlnPlot(myeloid, features = "MIF", group.by = "cell_type", split.by = "typ
 
 # Plot for SPP1 in lymphoid cells
 p6 <- VlnPlot(myeloid, features = "SPP1", group.by = "cell_type", split.by = "type") + ggtitle("SPP1 Expression in Myeloid Cells")
+
 p5+p6
 
 # Plot for CD44 in lymphoid cells
@@ -147,24 +147,50 @@ library(dplyr)
 library(tidyr)
 library(gridExtra)
 library(grid)
+library(tibble)
 
 # List of genes of interest
 genes_of_interest <- c("MIF", "SPP1", "CD44", "CD74", "CXCR4")
 
-# Fetch the expression data for these genes from the `myeloid` Seurat object:
-expression_data <- combined_data@assays$RNA@data[genes_of_interest,]
+# Use AverageExpression to get mean expression by cell type and type
+avg_expression <- AverageExpression(combined_data, slot = "data", features = genes_of_interest, group.by = c("cell_type", "type"))
+# trace(AverageExpression, edit = T)
+
+# Convert the averaged expression values to a data frame and reshape for easy manipulation
+df_avg_expression <- as.data.frame(avg_expression$RNA) %>%
+  rownames_to_column("Gene") %>%
+  t() %>%
+  as.data.frame()
+
+# Make the first row the header
+colnames(df_avg_expression) <- as.character(df_avg_expression[1, ])
+
+# Remove the first row
+df_avg_expression <- df_avg_expression[-1, ]
+
+# Set the working directory 
+setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals/Comparison")
+
+# Save the grid object as PNG
+write.csv(df_avg_expression, "table_plot_revised.csv", row.names = T)
+```
+
+AverageExpression Function Validation
+```{r}
+# Apply expm1 transformation to RNA@data 
+transformed_data <- expm1(combined_data@assays$RNA@data[genes_of_interest,])
 
 # Extract metadata to group by "cell_type" and "type":
 metadata <- combined_data@meta.data[, c("cell_type", "type")]
 
-# Function to calculate mean expressions for a given gene
+# Function to calculate mean expressions for a given gene after transformation
 calculate_mean <- function(gene_name) {
-  gene_expression <- expression_data[gene_name,]
-  combined_df <- data.frame(Gene_Expression=gene_expression, metadata)
+  gene_expression <- transformed_data[gene_name,]
+  combined <- data.frame(Gene_Expression=gene_expression, metadata)
   
-  mean_values <- combined_df %>%
+  mean_values <- combined %>%
     group_by(cell_type, type) %>%
-    summarise(mean_expression = mean(Gene_Expression, na.rm = T)) %>%
+    summarise(mean_expression = mean(Gene_Expression, na.rm = TRUE)) %>%
     mutate(Gene = gene_name)
   
   return(mean_values)
@@ -179,17 +205,109 @@ clean_table <- all_mean_values %>%
 
 # View the clean summary table
 print(clean_table)
+```
+
+```{r}
+library(tidyverse)
+library(gt)
+# combined_data_sct <- SCTransform(combined_data, vst.flavor = "v2", verbose = FALSE)
+
+table(Idents(combined_data), combined_data$seurat_clusters)
+combined_data$seurat_clusters <- as.factor(combined_data$seurat_clusters)
+Idents(object = combined_data) <- "seurat_clusters"
+
+# Getting the unique cell types in your data
+unique_cell_types <- unique(combined_data$cell_type)
+
+# Initialize a list to store the results for each cell type
+all_markers_list <- list()
+
+# Loop through each unique cell type
+for (cell_type in unique_cell_types) {
+  # Subset data for the current cell type in loop
+  current_data <- subset(combined_data, cell_type == !!cell_type)
+  
+  # Run FindMarkers for the current subset of data and store the result in the list
+  all_markers_list[[cell_type]] <- FindMarkers(
+    object = current_data,
+    ident.1 = "carotid",
+    ident.2 = "femoral",
+    features = c("MIF", "SPP1", "CD44", "CD74", "CXCR4"),
+    logfc.threshold = 0,
+    only.pos = FALSE,
+    group.by = "type"
+  )
+
+  # Optional: print a message to keep track of progress
+  print(paste("Completed analysis for", cell_type))
+}
+
+all_markers <- bind_rows(all_markers_list, .id = "cell_type")
+all_markers$gene <- rownames(all_markers)
+rownames(all_markers) <- NULL
+
+# Clean the data frame
+cleaned_all_marker <- all_markers %>%
+  # Separate gene names and numbers into two separate columns
+  separate(gene, into = c("gene", "number"), sep = "\\.\\.\\.") %>%
+  # Remove the "number" column
+  select(-number) %>%
+  # Rearrange the columns
+  select(cell_type, gene, avg_log2FC, p_val, p_val_adj, pct.1, pct.2)
+
+# Create a beautiful table
+table <- cleaned_all_marker %>%
+  gt() %>%
+  tab_header(
+    title = "Fold-Change Comparisons of SPP1 & MIF Pathway Genes"
+  ) %>%
+  cols_label(
+    cell_type = "Cell Type",
+    gene = "Gene",
+    p_val = "P-Value",
+    avg_log2FC = "Avg log2 Fold Change",
+    pct.1 = "% of Carotid Cells",
+    pct.2 = "% of Femoral Cells",
+    p_val_adj = "Adjusted P-Value"
+  ) %>%
+  fmt_scientific(
+    columns = vars(p_val, p_val_adj),
+    scale_by = 1,
+    decimals = 3
+  ) %>%
+  fmt_number(
+    columns = vars(avg_log2FC, `pct.1`, `pct.2`),
+    decimals = 3
+  ) %>%
+  data_color(
+    columns = vars(p_val_adj),
+    colors = function(x) {
+      ifelse(x < 0.05, "lightgreen", "white")
+    }
+  )
 
 # Set the working directory 
 setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals/Comparison")
 
-# Convert table to a grid object
-table_plot <- tableGrob(clean_table)
+# Save the table as a file
+gtsave(table, filename = "fold-change_table.png")
 
-# Save the grid object as PNG
-png("clean_table.png", width=650, height=750)  # Adjust width and height as necessary
-grid.draw(table_plot)
-dev.off()
+```
+
+```{r}
+# Get the number of cells for each `cell_type` and `type`
+# cell_counts <- metadata %>%
+#   group_by(cell_type, type) %>%
+#   summarise(count = n())
+
+# Set the working directory 
+# setwd("/Volumes/biologos/Bioinformatics/Using-CellChat-for-Ligand-Receptor-Network-Analysis/Visuals/Comparison")
+
+# Save the cell counts as a CSV file
+# write.csv(cell_counts, "cell_counts.csv", row.names = FALSE)
+
+# Print the cell counts
+# print(cell_counts)
 ```
 
 ```{r}

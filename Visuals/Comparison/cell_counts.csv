@@ -1,0 +1,35 @@
+"cell_type","type","count"
+"CD79A+ B cells type 1","carotid",4
+"CD79A+ B cells type 1","femoral",2752
+"CD79A+ B cells type 2","carotid",242
+"CD79A+ B cells type 2","femoral",2397
+"CXCL8+ T cells","carotid",2880
+"CXCL8+ T cells","femoral",497
+"Dendritic cells","carotid",526
+"Dendritic cells","femoral",266
+"GZMH+ CD8+ T cells","carotid",2954
+"GZMH+ CD8+ T cells","femoral",1844
+"GZMK+ CD8+ T cells","carotid",5623
+"GZMK+ CD8+ T cells","femoral",6609
+"IFN-associated Myeloid cells","carotid",108
+"IFN-associated Myeloid cells","femoral",143
+"IL1B+ APOE+ Macrophages","carotid",3386
+"IL1B+ APOE+ Macrophages","femoral",367
+"IL1B+ APOE- Macrophages","carotid",3043
+"IL1B+ APOE- Macrophages","femoral",632
+"IL1B- APOE+ Macrophages","carotid",285
+"IL1B- APOE+ Macrophages","femoral",506
+"IL7R+ CD4+ Effector T cells","carotid",8063
+"IL7R+ CD4+ Effector T cells","femoral",12612
+"KIT+ Mast cells","carotid",443
+"KIT+ Mast cells","femoral",394
+"LYVE1+ Macrophages","carotid",82
+"LYVE1+ Macrophages","femoral",369
+"Monocytes","carotid",1068
+"Monocytes","femoral",1784
+"Natural Killer cells","carotid",727
+"Natural Killer cells","femoral",2809
+"Plasma cells","carotid",303
+"Plasma cells","femoral",209
+"TIGIT+ CD4+ Treg cells","carotid",590
+"TIGIT+ CD4+ Treg cells","femoral",701
